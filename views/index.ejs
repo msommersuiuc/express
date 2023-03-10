@@ -5,30 +5,54 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
 <link rel="stylesheet" href="/stylesheets/bootstrap.min.css" />
+<title>ChatGPT Note Generator</title>
 </head>
 
 <body>
+  <h1>ChatGTP Note Generator</h1>
   <div class="container">
     <div class="card mt-4">
       <div class="card-header">
-        <h2>Create a Card</h2>
+        <h2>Create a Note</h2>
       </div>
       <div class="card-body">
         <div class="mb-3">
-          <label>From:</label>
-          <input id="from-input" type="text" class="form-control">
+          <label for="note-type-select" class="form-label">Note Type:</label>
+          <select id="note-type-select" class="form-control">
+            <option value="ThankYou">Thank You Note</option>
+            <option value="Sympathy">Sympathy Note</option>
+            <option value="MissingYou">Missing You Note</option>
+            <option value="WishingYouWell">Wishing You Well Note</option>
+            <option value="Christmas">Christmas Card</option>
+          </select>
         </div>
         <div class="mb-3">
-          <label>To:</label>
+          <label for="to-input" class="form-label">To:</label>
           <input id="to-input" type="text" class="form-control">
         </div>
         <div class="mb-3">
-          <label>To:</label>
-          <input type="text" class="form-control">
+          <label for="from-input" class="form-label">From:</label>
+          <input id="from-input" type="text" class="form-control">
+        </div>
+        <div class="mb-3">
+          <label for="for-input" class="form-label">For:</label>
+          <input id="for-input" type="text" class="form-control">
+        </div>
+        <div class="mb-3">
+          <label for="include-input" class="form-label">Include:</label>
+          <input id="include-input" type="text" class="form-control">
+        </div>     
+      </div>
+      <div class="card-footer d-flex">
+        <button id="submit-btn" type="button" class="btn btn-success">Generate</button>
+        <div id="loading" class="spinner-border ms-3 align-self-center" role="status" style="display:none">
+          <span class="visually-hidden">Loading...</span>
         </div>
       </div>
-      <div class="card-footer">
-        <button id="submit-btn" type="button" class="btn btn-success">Generate</button>
+    </div>
+    <div id="results-card" class="card mt-4" style="display:none">
+      <div class="card-body">
+        <pre id="result" class="mb-0" style="white-space: pre-wrap"></pre>
       </div>
     </div>
   </div>
@@ -38,11 +62,43 @@
 
 <script type="text/javascript">
   $(document).ready(() => {
-    $("#submit-btn").on("click", () => {
-      $.post("/submit", { from: $("#from-input").val(), to: $("#to-input").val() }, data => {
+    const decoder = new TextDecoder();
 
-      });
+    $("#submit-btn").on("click", async () => {
+      $("#results-card").hide();
+      $("#result").empty();
+      $("#loading").show();
+
+      const response = await fetch("/submit",
+        {
+          method: 'POST',
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ from: $("#from-input").val(), to: $("#to-input").val(), for: $("#for-input").val(), include: $("#include-input").val(), type: $("#note-type-select").val() })
+        }
+      );
+
+      $("#results-card").show();
+
+      const reader = response.body.getReader();
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done)
+          break;
+
+        let content = decoder.decode(value)
+        console.log('Received', content);
+        if (!$("#result").text())
+            content = content.trimLeft();
+
+        $("#result").append(content);
+      }
+
+      $("#loading").hide();
     });
   });
 </script>
+
 </html>
