@@ -2,7 +2,7 @@ var express = require('express');
 var router = express.Router();
 const { Configuration, OpenAIApi } = require("openai");
 const configuration = new Configuration({
-  apiKey: "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"
+  apiKey: null
 });
 const openai = new OpenAIApi(configuration);
 
@@ -19,7 +19,7 @@ router.post("/submit", async (req, res, next) => {
       temperature: 0,
       max_tokens: 7,
     });
-    
+
     res.json(response.data);
   } catch {
     res.json(false);
