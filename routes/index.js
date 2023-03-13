@@ -3,44 +3,49 @@ var router = express.Router();
 const { Configuration, OpenAIApi } = require("openai");
 const configuration = new Configuration({
   apiKey: "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",
-  basePath: "https://api.openai.com/v1/chat"
 });
-const openai = new OpenAIApi(configuration);
+
 
 /* GET home page. */
 router.get('/', function(req, res, next) {
   res.render('index', { title: 'Express' });
 });
 
-router.post("/submit", async (req, res, next) => {
+router.post("/image", async (req, res, next) => {
+  data = req.body;
+  if (!data)
+    res.json(false);
+  
+  let prompt = data.prompt
+  console.log(prompt);
+
+  try {
+    const openai = new OpenAIApi(configuration);
+    const oairesponse = await openai.createImage({
+      prompt: prompt,
+      n: 1,
+      size: "256x256",
+    });
+
+    res.json({ url: oairesponse?.data?.data[0]?.url });
+    return;
+  } catch (error) {
+    console.error('An error occurred during OpenAI request', error);
+  }
+
+  res.json(false);
+});
+
+router.post("/completion", async (req, res, next) => {
   data = req.body;
   if (!data)
     res.json(false);
 
-  let prompt;
-  switch (data.type) {
-    case "ThankYou":
-      prompt = `Write a thank you note from ${data.from} to ${data.to}. Make the note less than 4 sentences.`;
-      break;
-    case "Sympathy":
-      prompt = `Write a sympathy note from ${data.from} to ${data.to}. Make the note less than 4 sentences.`;
-      break;
-    case "MissingYou":
-      prompt = `Write a "missing you" note from ${data.from} to ${data.to}. Make the note less than 4 sentences.`;
-      break;
-    case "WishingYouWell":
-      prompt = `Write a "wishing you well" note from ${data.from} to ${data.to}. TMake the note less than 4 sentences.`;
-      break;
-    case "Christmas":
-      prompt = `Write a Christmas greeting card from ${data.from} to ${data.to}. Make the note less than 4 sentences.`;
-      break;
-    default:
-      return;
-  }
-
+  let prompt = data.prompt
   console.log(prompt);
 
   try {
+    const openai = new OpenAIApi(configuration, "https://api.openai.com/v1/chat");
     const oairesponse = await openai.createCompletion({
       model: "gpt-3.5-turbo",
       messages: [{

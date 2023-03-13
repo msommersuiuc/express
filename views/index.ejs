@@ -4,100 +4,276 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-<link rel="stylesheet" href="/stylesheets/bootstrap.min.css" />
-<title>ChatGPT Note Generator</title>
+  <link rel="stylesheet" href="/stylesheets/bootstrap.min.css" />
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <title>ChatGPT Note Generator</title>
+  <style type="text/css">
+    .material-icons {
+      vertical-align: -.3021979231em;
+    }
+  </style>
 </head>
 
 <body>
+  <header class="navbar navbar-dark fixed-top" style="background-color: #13294b; box-shadow: 0 2px 4px 0 rgba(0,0,0,.14),0 4px 5px 0 rgba(0,0,0,.12),0 1px 10px 0 rgba(0,0,0,.2);">
+    <a class="navbar-brand mr-auto ms-3 fw-semibold" href="/">
+      <img src="/images/imark.svg" width="30" height="30" class="d-none d-sm-inline-block align-top brand-logo-lg" alt="University of Illinois at Urbana-Champaign Logo" />ATLAS ChatGTP Note Generator
+    </a>
+  </header>
+  <div id="main-container" class="container pt-5"></div>
+</body>
+<footer class="py-4 mt-5 bg-light position-absolute w-100">
   <div class="container">
-    <h1 class="my-3">ATLAS ChatGTP Note Generator</h1>
-    <div class="card mt-4">
-      <div class="card-header">
-        <h2>Create a Note</h2>
+    <ul class="list-inline mb-0">
+      <li class="list-inline-item"><a class="" href="http://go.illinois.edu/privacy" target="_blank"><i class="material-icons me-3" aria-hidden="true">public</i>Privacy Notice</a></li>
+      <li class="list-inline-item"><span class="">2023 © University of Illinois Board of Trustees</span></li>
+      <li class="list-inline-item"><span style="word-break: break-all;"><i class="material-icons me-3" aria-hidden="true">code</i>ATLAS ChatGTP Note Generator</span></li>
+      <li class="list-inline-item"><a href="https://atlas.illinois.edu/" target="_blank">ATLAS Intern Team</a></li>
+    </ul>
+  </div>
+</footer>
+<script src="/javascripts/bootstrap.min.js"></script>
+<script src="/javascripts/jquery.min.js"></script>
+<script src="/javascripts/vue.global.js"></script>
+
+<template id="app">
+  <h1 class="my-3">ATLAS ChatGTP Note Generator</h1>
+  <div class="card mt-4">
+    <div class="card-header">
+      <h2>Create a Note</h2>
+    </div>
+    <div class="card-body">
+      <div class="mb-3">
+        <label for="note-type-select" class="form-label">Note Type:</label>
+        <select id="note-type-select" class="form-control" v-model="controls.type">
+          <option disabled value="">Please select one</option>
+          <option value="ThankYou">Thank You Note</option>
+          <option value="Sympathy">Sympathy Note</option>
+          <option value="MissingYou">Missing You Note</option>
+          <option value="WishingYouWell">Wishing You Well Note</option>
+          <option value="Christmas">Christmas Card</option>
+        </select>
       </div>
-      <div class="card-body">
-        <div class="mb-3">
-          <label for="note-type-select" class="form-label">Note Type:</label>
-          <select id="note-type-select" class="form-control">
-            <option value="ThankYou">Thank You Note</option>
-            <option value="Sympathy">Sympathy Note</option>
-            <option value="MissingYou">Missing You Note</option>
-            <option value="WishingYouWell">Wishing You Well Note</option>
-            <option value="Christmas">Christmas Card</option>
-          </select>
-        </div>
-        <div class="mb-3">
-          <label for="to-input" class="form-label">To:</label>
-          <input id="to-input" type="text" class="form-control">
-        </div>
-        <div class="mb-3">
-          <label for="from-input" class="form-label">From:</label>
-          <input id="from-input" type="text" class="form-control">
-        </div>
-        <div class="mb-3">
-          <label for="for-input" class="form-label">For:</label>
-          <input id="for-input" type="text" class="form-control">
-        </div>
-        <div class="mb-3">
-          <label for="include-input" class="form-label">Include:</label>
-          <input id="include-input" type="text" class="form-control">
-        </div>     
+      <div class="mb-3">
+        <label for="to-input" class="form-label">To:</label>
+        <input id="to-input" type="text" class="form-control" v-model="controls.to">
       </div>
-      <div class="card-footer d-flex">
-        <button id="submit-btn" type="button" class="btn btn-success">Generate</button>
-        <div id="loading" class="spinner-border ms-3 align-self-center" role="status" style="display:none">
-          <span class="visually-hidden">Loading...</span>
+      <div class="mb-3">
+        <label for="from-input" class="form-label">From:</label>
+        <input id="from-input" type="text" class="form-control" v-model="controls.from">
+      </div>
+      <div class="mb-3">
+        <label for="for-input" class="form-label">For:</label>
+        <input id="for-input" type="text" class="form-control" v-model="controls.for">
+      </div>
+      <div class="mb-5">
+        <label for="include-input" class="form-label">Include:</label>
+        <input id="include-input" type="text" class="form-control" v-model="controls.include">
+      </div>
+      <div v-if="prompt" class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <h3 class="card-title">Prompt</h3>
+          <button type="button" class="btn btn-primary" @click="editing = !editing">{{ editing ? "Cancel" : "Edit" }}</button>
+        </div>
+        <div class="card-body text-primary">
+          <span v-show="!editing">{{ generatedPrompt }}</span>
+          <textarea v-show="editing" class="form-control" v-model="userPrompt" style="display: none;"></textarea>
         </div>
       </div>
     </div>
-    <div id="results-card" class="card mt-4" style="display:none">
-      <div class="card-body">
-        <pre id="result" class="mb-0" style="white-space: pre-wrap"></pre>
+    <div class="card-footer d-flex">
+      <button id="submit-btn" type="button" class="btn btn-success" @click="onClickSubmit" :disabled="loading || !prompt">Generate</button>
+      <div id="loading" class="spinner-border ms-3 align-self-center" role="status" v-show="loading" style="display:none">
+        <span class="visually-hidden">Loading...</span>
       </div>
     </div>
   </div>
-</body>
-<script src="/javascripts/bootstrap.min.js"></script>
-<script src="/javascripts/jquery.min.js"></script>
+  <div id="results-card" class="card mt-4" style="display:none">
+    <div class="card-body" :class="{ row: editingImagePrompt }">
+      <div :class="{ col: editingImagePrompt, 'border-end': editingImagePrompt, 'border-dark': editingImagePrompt }">
+        <pre id="result" class="mb-0" style="white-space: pre-wrap" v-show="!editingImagePrompt">{{ result }}</pre>
+        <div v-show="editingImagePrompt" style="display:none">
+          <label class="form-label">Image Prompt:</label>
+          <textarea class="form-control" :rows="Math.max(10, result.split('\n').length)" v-model="imagePrompt"></textarea>
+        </div>
+      </div>
+      <div :class="{ col: editingImagePrompt }" class="my-auto" v-show="editingImagePrompt" style="display: none">
+        <img v-if="imageUrl && imageUrl.length" :src="imageUrl" class="img-fluid rounded-4 mx-auto d-block img-thumbnail">
+        <svg v-else class="img-fluid rounded mx-auto d-block img-thumbnail" width="256" height="256" xmlns="http://www.w3.org/2000/svg" role="img" style="text-anchor: middle;" aria-label="Placeholder: 256x256" preserveAspectRatio="xMidYMid slice" focusable="false">
+          <title>Placeholder</title>
+          <rect width="100%" height="100%" fill="#868e96"></rect><text x="50%" y="50%" fill="#dee2e6" dy=".3em">256x256</text>
+        </svg>
+      </div>
+    </div>
+    <div class="card-footer d-flex">
+      <button type="button" class="btn btn-primary me-2" @click="clickGenerateImage" v-show="!editingImagePrompt">Generate Image</button>
+      <div v-show="editingImagePrompt" style="display:none">
+        <div class="d-flex" >
+          <button type="button" class="btn btn-primary me-2" @click="clickGo" :disabled="loadingImage || !imagePrompt">Go</button>
+          <button type="button" class="btn btn-danger" @click="clickBack">Back</button>
+          <div class="spinner-border ms-3 align-self-center" role="status" v-show="loadingImage" style="display:none">
+            <span class="visually-hidden">Loading...</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
 
 <script type="text/javascript">
-  $(document).ready(() => {
-    const decoder = new TextDecoder();
+  const decoder = new TextDecoder();
 
-    $("#submit-btn").on("click", async () => {
-      $("#results-card").hide();
-      $("#result").empty();
-      $("#loading").show();
+  function initVue() {
+    Vue.createApp({
+      setup: (props, ctx) => {
+        const loading = Vue.ref(false);
+        const controls = Vue.reactive({
+          from: String(),
+          to: String(),
+          for: String(),
+          include: String(),
+          type: String()
+        });
+        const result = Vue.ref(String());
+        const editing = Vue.ref(false);
+        const userPrompt = Vue.ref(String());
+        const imageUrl = Vue.ref(String());
+        const editingImagePrompt = Vue.ref(false);
+        const imagePrompt = Vue.ref(String());
+        const loadingImage = Vue.ref(false);
 
-      const response = await fetch("/submit",
-        {
-          method: 'POST',
-          headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ from: $("#from-input").val(), to: $("#to-input").val(), for: $("#for-input").val(), include: $("#include-input").val(), type: $("#note-type-select").val() })
+        const prompt = Vue.computed(() => {
+          return editing.value ? userPrompt.value : generatedPrompt.value;
+        });
+
+        const generatedPrompt = Vue.computed(() => {
+          if (!controls.type) {
+            return null;
+          }
+
+          let p;
+
+          switch (controls.type) {
+            case "ThankYou":
+              p = `Write a thank you note from ${controls.from} to ${controls.to}. Make the note less than 4 sentences.`;
+              break;
+            case "Sympathy":
+              p = `Write a sympathy note from ${controls.from} to ${controls.to}. Make the note less than 4 sentences.`;
+              break;
+            case "MissingYou":
+              p = `Write a "missing you" note from ${controls.from} to ${controls.to}. Make the note less than 4 sentences.`;
+              break;
+            case "WishingYouWell":
+              p = `Write a "wishing you well" note from ${controls.from} to ${controls.to}. Make the note less than 4 sentences.`;
+              break;
+            case "Christmas":
+              p = `Write a Christmas greeting card from ${controls.from} to ${controls.to}. Make the note less than 4 sentences.`;
+              break;
+            default:
+              return null;
+          }
+
+          return p;
+        });
+
+        Vue.watch(generatedPrompt, (newValue) => {
+          if (!editing.value) {
+            userPrompt.value = generatedPrompt.value;
+          }
+        })
+
+        function clickGenerateImage() {
+          editingImagePrompt.value = true;
         }
-      );
 
-      $("#results-card").show();
+        async function clickGo() {
+          if (!editingImagePrompt.value || loadingImage.value)
+            return;
 
-      const reader = response.body.getReader();
-      while (true) {
-        const { value, done } = await reader.read();
-        if (done)
-          break;
+          loadingImage.value = true;
+          const imgResp = await fetch("/image", {
+            method: 'POST',
+            headers: {
+              'Accept': 'application/json',
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ prompt: imagePrompt.value })
+          });
 
-        let content = decoder.decode(value)
-        console.log('Received', content);
-        if (!$("#result").text())
-            content = content.trimLeft();
+          const data = await imgResp.json();
 
-        $("#result").append(content);
-      }
+          imageUrl.value = data.url;
+          loadingImage.value = false;
+          console.log(data.url)
+        }
 
-      $("#loading").hide();
-    });
+        function clickBack() {
+          editingImagePrompt.value = false;
+        }
+
+        async function onClickSubmit() {
+          $("#results-card").hide();
+          result.value = "";
+          imageUrl.value = null;
+          editingImagePrompt.value = false;
+          imagePrompt.value = "";
+          loading.value = true;
+          loadingImage.value = false;
+          
+          const response = await fetch("/completion", {
+            method: 'POST',
+            headers: {
+              'Accept': 'application/json',
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ prompt: prompt.value })
+          }
+          );
+
+          $("#results-card").show();
+
+          const reader = response.body.getReader();
+          while (true) {
+            const { value, done } = await reader.read();
+            if (done)
+              break;
+
+            let content = decoder.decode(value)
+            console.log('Received', content);
+            if (!result.value)
+              content = content.trimLeft();
+
+            result.value += content;
+          }
+
+          imagePrompt.value = result.value;
+          loading.value = false;
+        }
+
+        return {
+          loading,
+          controls,
+          onClickSubmit,
+          result,
+          generatedPrompt,
+          userPrompt,
+          prompt,
+          editing,
+          imageUrl,
+          clickGenerateImage,
+          editingImagePrompt,
+          imagePrompt,
+          clickGo,
+          clickBack,
+          loadingImage
+        };
+      },
+      template: "#app"
+    }).mount('#main-container')
+  }
+
+  $(document).ready(() => {
+    initVue();
   });
 </script>
 
