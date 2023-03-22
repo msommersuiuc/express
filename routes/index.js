@@ -6,8 +6,27 @@ const configuration = new Configuration({
 });
 
 
+// Middleware to ensure the user is authenticated
+function ensureAuthenticated(req, res, next) {
+  if (req.isAuthenticated()) {
+    return next();
+  }
+  res.redirect('/auth/openid');
+}
+
+
 /* GET home page. */
-router.get('/', function(req, res, next) {
+router.get('/', ensureAuthenticated, (req, res, next) => {
+  const userEmail = req.user._json.email;
+  const users = process.env.USERS.split(',');
+  if (users[0] === "*")
+    return next();
+
+  if (users.includes(userEmail)) {
+    return next();
+  }
+  res.status(403).send('Forbidden: You do not have the required role to access this resource.');
+}, function(req, res, next) {
   res.render('index', { title: 'Express' });
 });
 
