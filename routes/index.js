@@ -66,7 +66,7 @@ router.post("/completion", async (req, res, next) => {
   try {
     const openai = new OpenAIApi(configuration, "https://api.openai.com/v1/chat");
     const oairesponse = await openai.createCompletion({
-      model: "gpt-3.5-turbo",
+      model: "gpt-4",
       messages: [{
         "role": "user",
         "content": prompt
